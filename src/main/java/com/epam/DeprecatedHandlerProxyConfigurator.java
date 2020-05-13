@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.stream.Stream;
 
 /**
  * @author Evgeny Borisov
@@ -14,6 +15,7 @@ public class DeprecatedHandlerProxyConfigurator implements ProxyConfigurator {
     @Override
     public Object replaceWithProxyIfNeeded(Object t, Class implClass) {
         //todo make support for @Deprecate above methods, not class
+
         if (implClass.isAnnotationPresent(Deprecated.class)) {
 
             if (implClass.getInterfaces().length == 0) {
@@ -32,7 +34,22 @@ public class DeprecatedHandlerProxyConfigurator implements ProxyConfigurator {
                     return getInvocationHandlerLogic(method, args, t);
                 }
             });
-        } else {
+        } else if (Stream.of(implClass.getMethods()).anyMatch(x->x.isAnnotationPresent(Deprecated.class))) {
+            return Proxy.newProxyInstance(implClass.getClassLoader(), implClass.getInterfaces(), new InvocationHandler() {
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (method.isAnnotationPresent(Deprecated.class)) {
+                        return getInvocationHandlerLogic(method, args, t);
+                    } else if (t.getClass().getMethod(method.getName()).isAnnotationPresent(Deprecated.class)) {
+                        return getInvocationHandlerLogic(method, args, t);
+                    } else {
+                        return method.invoke(t, args);
+                    }
+
+                }
+            });
+        }
+        else {
             return t;
         }
 
