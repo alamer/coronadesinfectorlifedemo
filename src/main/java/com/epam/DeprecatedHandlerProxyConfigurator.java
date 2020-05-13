@@ -40,7 +40,7 @@ public class DeprecatedHandlerProxyConfigurator implements ProxyConfigurator {
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                     if (method.isAnnotationPresent(Deprecated.class)) {
                         return getInvocationHandlerLogic(method, args, t);
-                    } if (t.getClass().getMethod(method.getName()).isAnnotationPresent(Deprecated.class)) {
+                    } else if (t.getClass().getMethod(method.getName()).isAnnotationPresent(Deprecated.class)) {
                         return getInvocationHandlerLogic(method, args, t);
                     } else {
                         return method.invoke(t, args);
